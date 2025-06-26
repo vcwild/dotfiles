@@ -1,0 +1,5 @@
+#!/bin/bash
+
+export RANCHER_ACCESS_KEY=token-fw242
+export RANCHER_SECRET_KEY=tx9bmtn8qqrz2wj2mbh2p9pb5glg8hdhlq7q5kg5bm4rpzpcqtbfrf
+export RANCHER_URL=https://rancher.prod.k8s.etgcloud.io/v3

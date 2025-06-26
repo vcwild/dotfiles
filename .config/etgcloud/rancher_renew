@@ -1,0 +1,32 @@
+#!/bin/bash
+
+ETG_CONFIG_PATH="$HOME/.config/etgcloud"
+AUTH_FILE="$ETG_CONFIG_PATH/.auth_timestamp"
+TOKEN_FILE="$ETG_CONFIG_PATH/rancher_auth"
+CURRENT_TIME=$(date +%s)
+# How many hours to store the current Rancher refresh token
+AUTH_REFRESH_TIMER=8
+
+# Check if the auth file exists, otherwise assume token is expired
+if [ -f "$AUTH_FILE" ]; then
+    LAST_AUTH=$(cat "$AUTH_FILE")
+else
+    LAST_AUTH=0
+fi
+
+ELAPSED_HOURS=$(( (CURRENT_TIME - LAST_AUTH) / 3600 ))
+
+# Refresh token if the auth time has expired
+if [ "$ELAPSED_HOURS" -ge $AUTH_REFRESH_TIMER ]; then
+    echo "Refreshing Rancher authentication, please wait..."
+	source $TOKEN_FILE
+    etgcloud rancher kubeconfig --refresh > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        date +%s > "$AUTH_FILE"
+        echo "Authentication refreshed successfully."
+    else
+        echo "Authentication failed. Please check your VPN connection."
+    fi
+else
+    echo "Authentication is already active"   
+fi

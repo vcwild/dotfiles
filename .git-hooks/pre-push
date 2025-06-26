@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Block common force flags
+if [[ "$*" == *"--force"* && "$*" != *"--force-with-lease"* ]]; then
+  echo "❌ Push blocked: Do not use '--force'. Use '--force-with-lease' instead."
+  exit 1
+fi
+
+if [[ "$*" == *" -f"* ]]; then
+  echo "❌ Push blocked: Do not use '-f'. Use '--force-with-lease' instead."
+  exit 1
+fi
+
+# Block --force from push options (e.g., passed via CI)
+if [[ "$GIT_PUSH_OPTION_COUNT" -gt 0 ]]; then
+  for i in $(seq 0 $((GIT_PUSH_OPTION_COUNT - 1))); do
+    eval option=\$GIT_PUSH_OPTION_$i
+    if [[ "$option" == "--force" || "$option" == "-f" ]]; then
+      echo "❌ Push blocked: Do not use '--force' or '-f'. Use '--force-with-lease' instead."
+      exit 1
+    fi
+  done
+fi
+
+exit 0

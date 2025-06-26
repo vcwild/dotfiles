@@ -1,0 +1,46 @@
+format = """$directory$custom$all"""
+
+[kubernetes]
+format = '[$context( \($namespace\))]($style) '
+disabled = false
+style = "bright-blue"
+	
+[[kubernetes.contexts]]
+context_pattern = "k8s-.*prod.*"
+style = "bold red"
+
+[[kubernetes.contexts]]
+context_pattern = "k8s-.*test.*"
+style = "green"
+
+[custom.vpn]
+command = "pgrep openconnect >/dev/null && echo 🔒"
+when = "pgrep openconnect"
+shell = ["bash"]
+format = "[$output]($style)"
+style = ""
+
+[custom.vault]
+command = "~/.config/starship/custom/vault.sh"
+when = "test -f ~/.cache/vault_token_expiry"
+style = "bold yellow"
+
+[custom.rancher]
+command = '''
+bash -c 'file="/home/vcwild/.config/etgcloud/.auth_timestamp"; 
+[[ -f "$file" ]] && 
+now=$(date +%s) && 
+ts=$(cat "$file") && 
+(( now - ts < 8 * 3600 )) && 
+echo "🏕️"'
+'''
+when = "test -f /home/vcwild/.config/etgcloud/.auth_timestamp"
+style = "green"
+
+#[custom.gpgsign]
+#when = '''
+#git rev-parse --is-inside-work-tree > /dev/null 2>&1 && git config commit.gpgsign | grep -q "true"
+#'''
+#command = 'echo "🛡️"'
+#style = "yellow"
+

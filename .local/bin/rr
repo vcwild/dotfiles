@@ -1,0 +1,3 @@
+#!/usr/bin/bash
+
+sh ~/.config/etgcloud/rancher_renew

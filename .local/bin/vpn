@@ -1,0 +1,41 @@
+#!/usr/bin/sh
+set -euo pipefail
+
+kill_openconnect() {
+	sudo pkill -f openconnect
+	sleep 0.15
+}
+
+run_openconnect(){
+    /home/vcwild/.local/share/hatch/env/virtual/auto-openconnect/NBs2eJBd/auto-openconnect/bin/python3 /home/vcwild/Projects/personal/auto-openconnect/src/connect.py || {
+    	echo "❌ Failed to connect to VPN" >&2
+    	    return 1
+    }
+    echo "🔒 VPN turned on"
+}
+
+
+check_openconnect() {
+	ps -C openconnect > /dev/null 2>&1 || {
+		echo "❗ VPN not running" >&2
+		return
+	}
+	echo "✅ Openconnect is running in the background"
+}
+
+#!/bin/bash
+
+# Check if the first argument is "on" or "off"
+if [[ "$1" == "on" ]]; then
+	kill_openconnect
+	run_openconnect
+elif [[ "$1" == "off" ]]; then
+	kill_openconnect
+	kill_openconnect
+    echo "🔓 VPN turned off"
+elif [[ "$1" == "check"  ]]; then
+    check_openconnect
+else
+    echo "Usage: vpn {on|off|check}"
+    exit 1
+fi

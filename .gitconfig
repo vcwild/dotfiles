@@ -1,0 +1,24 @@
+[user]
+	name = Victor Matteoni
+	email = victor.wildner.matteoni@etraveligroup.com
+	signingkey = B38A18A9066CDA1A
+[core]
+	editor = micro
+	hooksPath = /home/vcwild/.git-hooks
+[push]
+	default = current
+[pull]
+	rebase = true
+[init]
+	defaultBranch = main
+[alias]
+    co = checkout
+    prom = pull --rebase origin master
+    promain = pull --rebase origin main
+    tree = log --graph --full-history --all --color --pretty=tformat:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s%x20%x1b[33m(%an)%x1b[0m"
+[commit]
+	gpgsign = true
+[remote]
+	pushDefault = origin
+[tag]
+	forceSignAnnotated = true
