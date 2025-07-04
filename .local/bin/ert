@@ -3,8 +3,11 @@
 set timeout 10
 
 # Replace with your actual password or load from a secure place
-set password "Gilka148430!!!7070"
-
+set password [exec secret-tool lookup service etgcloud account vault]
+if {[string length $password] == 0} {
+	puts "Error: Password not found. Please ensure the secret is set up correctly."
+	exit 1
+}
 # Replace this with the full CLI command you're using
 set cmd "etgcloud vault ssh"
 

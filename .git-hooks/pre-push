@@ -1,25 +1,137 @@
 #!/bin/bash
+#
+# Git pre-push hook to prevent --force and allow only --force-with-lease
+# Place this file at ~/.git-hooks/pre-push and make it executable
+#
+# This hook is called with the following parameters:
+# $1 -- Name of the remote to which the push is being done
+# $2 -- URL to which the push is being done
+#
+# If this script exits with a non-zero status nothing will be pushed.
 
-# Block common force flags
-if [[ "$*" == *"--force"* && "$*" != *"--force-with-lease"* ]]; then
-  echo "❌ Push blocked: Do not use '--force'. Use '--force-with-lease' instead."
-  exit 1
-fi
+remote="$1"
+url="$2"
 
-if [[ "$*" == *" -f"* ]]; then
-  echo "❌ Push blocked: Do not use '-f'. Use '--force-with-lease' instead."
-  exit 1
-fi
+# Colors for output
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
 
-# Block --force from push options (e.g., passed via CI)
-if [[ "$GIT_PUSH_OPTION_COUNT" -gt 0 ]]; then
-  for i in $(seq 0 $((GIT_PUSH_OPTION_COUNT - 1))); do
-    eval option=\$GIT_PUSH_OPTION_$i
-    if [[ "$option" == "--force" || "$option" == "-f" ]]; then
-      echo "❌ Push blocked: Do not use '--force' or '-f'. Use '--force-with-lease' instead."
-      exit 1
+# Function to check if this is a force push
+is_force_push() {
+    # Method 1: Check command line arguments
+    local cmdline=$(ps -o args= -p $PPID 2>/dev/null)
+
+    # Method 2: Check environment variables that git sets
+    if [[ -n "$GIT_PUSH_OPTION_0" ]]; then
+        # Check git push options
+        local i=0
+        local var="GIT_PUSH_OPTION_$i"
+        while [[ -n "${!var}" ]]; do
+            if [[ "${!var}" == "--force" ]] || [[ "${!var}" == "-f" ]]; then
+                if [[ "${!var}" != "--force-with-lease"* ]]; then
+                    return 0
+                fi
+            fi
+            ((i++))
+            var="GIT_PUSH_OPTION_$i"
+        done
     fi
-  done
+
+    # Method 3: Check process command line
+    if [[ -n "$cmdline" ]]; then
+        # Check for --force or -f (but not --force-with-lease)
+        if echo "$cmdline" | grep -qE -- '--force($|[^-])' || echo "$cmdline" | grep -qE -- '(^| )-f($| )'; then
+            # Make sure it's not --force-with-lease
+            if ! echo "$cmdline" | grep -q -- '--force-with-lease'; then
+                return 0  # It's a regular force push
+            fi
+        fi
+    fi
+
+    # Method 4: Check if any refs are being force-updated (non-fast-forward)
+    while read local_ref local_sha remote_ref remote_sha; do
+        # If remote_sha is all zeros, it's a new branch
+        if [[ "$remote_sha" == "0000000000000000000000000000000000000000" ]]; then
+            continue
+        fi
+
+        # Check if this would be a non-fast-forward update
+        if [[ "$local_sha" != "0000000000000000000000000000000000000000" ]]; then
+            # Check if remote_sha is an ancestor of local_sha
+            if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+                # This is a non-fast-forward update, likely a force push
+                # But we need to distinguish between --force and --force-with-lease
+                if [[ -n "$cmdline" ]] && ! echo "$cmdline" | grep -q -- '--force-with-lease'; then
+                    return 0  # Regular force push
+                fi
+            fi
+        fi
+    done
+
+    return 1  # Not a regular force push
+}
+
+# Function to check if we're doing a force-with-lease
+is_force_with_lease() {
+    local cmdline=$(ps -o args= -p $PPID 2>/dev/null)
+    [[ -n "$cmdline" ]] && echo "$cmdline" | grep -q -- '--force-with-lease'
+}
+
+# Function to get current branch name
+get_current_branch() {
+    git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null
+}
+
+# Main hook logic
+echo -e "${YELLOW}🔍 Checking push safety for $(get_current_branch)...${NC}"
+
+# Read the input (stdin) for push details
+input=$(cat)
+
+# Check if this is a regular force push
+if is_force_push <<< "$input"; then
+    echo -e "${RED}❌ ERROR: Regular force push detected!${NC}"
+    echo -e "${RED}   git push --force is not allowed${NC}"
+    echo -e "${GREEN}✅ Use instead: git push --force-with-lease${NC}"
+    echo -e "${YELLOW}   This ensures you don't overwrite others' work${NC}"
+    echo
+    echo -e "${YELLOW}📚 Why --force-with-lease is safer:${NC}"
+    echo -e "   • It checks if remote branch has changed since your last fetch"
+    echo -e "   • It prevents accidentally overwriting others' commits"
+    echo -e "   • It's the recommended way to force push safely"
+    echo
+    echo -e "${YELLOW}💡 Quick fix:${NC}"
+    echo -e "   Instead of: ${RED}git push --force${NC}"
+    echo -e "   Use:        ${GREEN}git push --force-with-lease${NC}"
+    echo
+    exit 1
 fi
 
+# If it's force-with-lease, show a warning but allow it
+if is_force_with_lease; then
+    echo -e "${YELLOW}⚠️  Force-with-lease push detected${NC}"
+    echo -e "${GREEN}✅ This is the safe way to force push${NC}"
+    echo -e "${YELLOW}   Verifying remote hasn't changed since last fetch...${NC}"
+fi
+
+# Additional safety: warn about pushing to main/master
+while read local_ref local_sha remote_ref remote_sha; do
+    if [[ "$remote_ref" == "refs/heads/main" ]] || [[ "$remote_ref" == "refs/heads/master" ]]; then
+        echo -e "${YELLOW}⚠️  WARNING: Pushing to ${remote_ref##refs/heads/} branch${NC}"
+        echo -e "${YELLOW}   Branch: $(get_current_branch) → ${remote_ref##refs/heads/}${NC}"
+
+        # Optional: uncomment to require confirmation for main/master pushes
+        # echo -e "${YELLOW}   Are you sure this is intentional?${NC}"
+        # read -p "Continue? (y/N): " -n 1 -r
+        # echo
+        # if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        #     echo -e "${RED}❌ Push cancelled${NC}"
+        #     exit 1
+        # fi
+    fi
+done <<< "$input"
+
+echo -e "${GREEN}✅ Push safety check passed${NC}"
 exit 0

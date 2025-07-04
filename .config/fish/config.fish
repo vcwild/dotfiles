@@ -2,7 +2,7 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
 end
 
-sh ~/.config/etgcloud/rancher_renew > /dev/null 2>&1 &
+# sh ~/.config/etgcloud/rancher_renew > /dev/null 2>&1 &
 
 # vpn on > /dev/null 2>&1 &
 
