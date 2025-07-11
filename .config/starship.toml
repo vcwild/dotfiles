@@ -1,4 +1,11 @@
-format = """$directory$custom$all"""
+format = """$directory$shell$custom$all"""
+
+[shell]
+format = '[$indicator]($style)'
+bash_indicator = '🐚'     # Bash = shell emoji
+fish_indicator = '🐟'     # Fish = fish emoji
+style = 'bold green'
+disabled = false
 
 [kubernetes]
 format = '[$context( \($namespace\))]($style) '
@@ -14,8 +21,8 @@ context_pattern = "k8s-.*test.*"
 style = "green"
 
 [custom.vpn]
-command = "pgrep openconnect >/dev/null && echo 🔒"
-when = "pgrep openconnect"
+command = "ps -C openconnect >/dev/null && echo 🔒"
+when = "ps -C openconnect"
 shell = ["bash"]
 format = "[$output]($style)"
 style = ""

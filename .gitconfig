@@ -5,6 +5,7 @@
 [core]
 	editor = micro
 	hooksPath = /home/vcwild/.git-hooks
+	excludesFile = /home/vcwild/.gitignore
 [push]
 	default = current
 [pull]

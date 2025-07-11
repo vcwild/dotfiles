@@ -1,41 +1,99 @@
-#!/usr/bin/sh
+#!/bin/bash
 set -euo pipefail
 
+# VPN configuration
+VPN_SERVER="https://access.etraveligroup.com"
+USERNAME="vicwil"
+PROTOCOL="f5"
+
 kill_openconnect() {
-	sudo pkill -f openconnect
-	sleep 0.15
+    sudo pkill -f openconnect 2>/dev/null || true
+    sudo pkill -f openconnect 2>/dev/null || true
+    sleep 0.05
 }
 
-run_openconnect(){
-    cd /home/vcwild/Projects/personal/auto-openconnect && hatch run auto-openconnect || {
-    	echo "❌ Failed to connect to VPN" >&2
-    	    return 1
-    }
-    echo "🔒 VPN turned on"
-}
+run_openconnect() {
+    echo "Connecting to VPN..."
 
+    # Get password using the hatch script
+    PASSWORD=$(cd /home/vcwild/Projects/personal/auto-openconnect && hatch run get-vpn-password)
+
+    if [[ $? -ne 0 ]]; then
+        echo "❌ Failed to get VPN password" >&2
+        return 1
+    fi
+
+    if [[ -z "$PASSWORD" ]]; then
+        echo "❌ Empty password received" >&2
+        return 1
+    fi
+
+    # Connect to VPN with all the flags from the original exec_openvpn function
+    echo "$PASSWORD" | sudo openconnect \
+        --protocol="$PROTOCOL" \
+        --non-inter \
+        --user="$USERNAME" \
+        --no-dtls \
+        --passwd-on-stdin \
+        --syslog \
+        "$VPN_SERVER" \
+        --reconnect-timeout=0 \
+        -b >/dev/null 2>&1
+
+    # Wait for OpenConnect to start successfully (max 2 seconds)
+    local timeout=20  # 20 * 0.1 = 2 seconds
+    local count=0
+
+    while [[ $count -lt $timeout ]]; do
+        if ps -C openconnect >/dev/null 2>&1; then
+            echo "🔒 VPN connected successfully"
+            return 0
+        fi
+        sleep 0.1
+        ((count++))
+    done
+
+    # If we get here, connection failed
+    echo "❌ Failed to connect to VPN (timeout after 2 seconds)" >&2
+    return 1
+}
 
 check_openconnect() {
-	ps -C openconnect > /dev/null 2>&1 || {
-		echo "❗ VPN not running" >&2
-		return
-	}
-	echo "✅ Openconnect is running in the background"
+    if ps -C openconnect >/dev/null 2>&1; then
+        echo "✅ VPN is running in the background"
+        local pid=$(pgrep openconnect 2>/dev/null || echo "unknown")
+        if [[ "$pid" != "unknown" ]]; then
+            echo "   PID: $pid"
+        fi
+    else
+        echo "❗ VPN not running" >&2
+    fi
 }
 
-#!/bin/bash
+show_usage() {
+    echo "Usage: vpn2 {on|off|check}"
+    echo ""
+    echo "Commands:"
+    echo "  on        - Connect to VPN"
+    echo "  off       - Disconnect from VPN"
+    echo "  check     - Check VPN connection status"
+}
 
-# Check if the first argument is "on" or "off"
-if [[ "$1" == "on" ]]; then
-	kill_openconnect
-	run_openconnect
-elif [[ "$1" == "off" ]]; then
-	kill_openconnect
-	kill_openconnect
-    echo "🔓 VPN turned off"
-elif [[ "$1" == "check"  ]]; then
-    check_openconnect
-else
-    echo "Usage: vpn {on|off|check}"
-    exit 1
-fi
+# Main script logic
+case "${1:-}" in
+    "on")
+        kill_openconnect
+        run_openconnect
+        ;;
+    "off")
+        kill_openconnect
+        #echo "🔓 VPN disconnected"
+        ;;
+    "check")
+        check_openconnect
+        ;;
+    *)
+        show_usage
+        exit 1
+        ;;
+esac
