@@ -8,7 +8,7 @@ style = 'bold green'
 disabled = false
 
 [kubernetes]
-format = '[$context( \($namespace\))]($style) '
+format = '[ $context( \($namespace\))]($style) '
 disabled = false
 style = "bright-blue"
 	
@@ -19,6 +19,10 @@ style = "bold red"
 [[kubernetes.contexts]]
 context_pattern = "k8s-.*test.*"
 style = "green"
+
+[[kubernetes.contexts]]
+context_pattern = "minikube"
+style = "blue"
 
 [custom.vpn]
 command = "ps -C openconnect >/dev/null && echo 🔒"
