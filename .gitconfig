@@ -2,6 +2,8 @@
 	name = Victor Matteoni
 	email = victor.wildner.matteoni@etraveligroup.com
 	signingkey = B38A18A9066CDA1A
+[includeIf "gitdir:/home/vcwild/Projects/personal/"]
+	path = ~/.gitconfig-github
 [core]
 	editor = micro
 	hooksPath = /home/vcwild/.git-hooks
@@ -14,7 +16,7 @@
 	defaultBranch = main
 [alias]
     co = checkout
-    prom = pull --rebase origin master
+    prom = !git pull --rebase origin main || git pull --rebase origin master    
     promain = pull --rebase origin main
     tree = log --graph --full-history --all --color --pretty=tformat:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%s%x20%x1b[33m(%an)%x1b[0m"
 [commit]
