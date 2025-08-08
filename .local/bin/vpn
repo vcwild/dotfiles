@@ -8,9 +8,9 @@ PROTOCOL="f5"
 
 kill_openconnect() {
     sudo pkill -f openconnect 2>/dev/null || true
-    sleep 0.15
+    sleep 0.25
     sudo pkill -f openconnect 2>/dev/null || true
-    sleep 0.15
+    sleep 0.25
 }
 
 run_openconnect() {

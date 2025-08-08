@@ -2,10 +2,13 @@
 # VERSION: 3.0
 SETUVAR --export DOCKER_HOST:unix\x3a///run/user/1000/docker\x2esock
 SETUVAR DOCKER_SOCK:/var/run/docker\x2esock
+SETUVAR --export PYENV_ROOT:/home/vcwild/\x2epyenv
 SETUVAR --export RANCHER_ACCESS_KEY:token\x2dvmmc9
 SETUVAR --export RANCHER_SECRET_KEY:8znmcl89sflg6zxl4bnqmnn4w2z64shrq7s84887nhcc999x477nvx
 SETUVAR --export RANCHER_URL:https\x3a//rancher\x2eprod\x2ek8s\x2eetgcloud\x2eio/v3
+SETUVAR --export REQUESTS_CA_BUNDLE:/usr/local/share/ca\x2dcertificates/etraveli/platform_ca\x2ecrt
 SETUVAR --export VAULT_ADDR:https\x3a//vault\x2eetraveli\x2enet
+SETUVAR VAULT_TOKEN:hvs\x2eCAESIDu5Z5n5eLNeFVtao_t845HktnDNiHO8bgSIWGU2krRoGh4KHGh2cy5qMExMc2ZjSHF2Q0JBUmxaMHJITUxsc0I
 SETUVAR __fish_initialized:3400
 SETUVAR fish_color_autosuggestion:brblack
 SETUVAR fish_color_cancel:\x2dr
@@ -36,3 +39,4 @@ SETUVAR fish_pager_color_description:yellow\x1e\x2di
 SETUVAR fish_pager_color_prefix:normal\x1e\x2d\x2dbold\x1e\x2d\x2dunderline
 SETUVAR fish_pager_color_progress:brwhite\x1e\x2d\x2dbackground\x3dcyan
 SETUVAR fish_pager_color_selected_background:\x2dr
+SETUVAR fish_user_paths:/home/vcwild/\x2epyenv/bin

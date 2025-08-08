@@ -24,7 +24,8 @@ if [ -d ~/.bashrc.d ]; then
 fi
 unset rc
 
-# Generated for envman. Do not edit.
-[ -s "$HOME/.config/envman/load.sh" ] && source "$HOME/.config/envman/load.sh"
-
 eval "$(starship init bash)"
+
+# Environment variables
+
+export REQUESTS_CA_BUNDLE = "/usr/local/share/ca-certificates/etraveli/platform_ca.crt"
